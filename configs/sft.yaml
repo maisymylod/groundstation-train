@@ -1,0 +1,24 @@
+# Supervised fine-tuning config. Tuned for 2x A100 80GB with QLoRA.
+base_model: Qwen/Qwen2.5-7B-Instruct
+output_dir: checkpoints/sft
+run_name: groundstation-sft
+seed: 42
+
+# QLoRA: 4-bit base, LoRA adapters.
+qlora: true
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+epochs: 3
+batch_size: 4
+grad_accum: 4
+learning_rate: 2.0e-4
+lr_scheduler: cosine
+warmup_ratio: 0.03
+max_seq_len: 1024
+gradient_checkpointing: true
+packing: false
+attn_implementation: sdpa   # set to flash_attention_2 if installed
+logging_steps: 5

@@ -1,0 +1,25 @@
+# DPO preference-alignment config. Starts from the SFT adapter.
+base_model: Qwen/Qwen2.5-7B-Instruct
+sft_adapter: checkpoints/sft
+output_dir: checkpoints/dpo
+run_name: groundstation-dpo
+seed: 42
+
+beta: 0.1
+loss_type: sigmoid    # use kto_pair for KTO-style alignment
+
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+epochs: 2
+batch_size: 2
+grad_accum: 8
+learning_rate: 5.0e-6
+lr_scheduler: cosine
+warmup_ratio: 0.1
+max_seq_len: 1024
+max_prompt_len: 768
+gradient_checkpointing: true
+attn_implementation: sdpa
+logging_steps: 5
