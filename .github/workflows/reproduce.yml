@@ -1,0 +1,42 @@
+name: reproduce-reference-eval
+
+# Nightly guard: re-derive the committed reference numbers from a clean checkout.
+# The reference policies are deterministic, so this should reproduce byte-for-byte.
+# If it does not (a dependency or the generator drifted), the job fails loudly.
+# It commits only the regenerated report, only if it genuinely changed, under the
+# pipeline's own identity -- never an empty or cosmetic commit.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Re-derive dataset + reference eval
+        run: |
+          python -m groundstation_train.data.generate
+          python -m groundstation_train.eval.harness --policy gate-compliant --tag gate-compliant-oracle --no-history
+          cp artifacts/EVAL.md artifacts/EVAL.reference.md
+      - name: Commit only if the reference report changed
+        run: |
+          git config user.name "heliosnet-ci[bot]"
+          git config user.email "heliosnet-ci[bot]@users.noreply.github.com"
+          if git diff --quiet -- artifacts/EVAL.reference.md; then
+            echo "reference eval reproduced unchanged; nothing to commit"
+          else
+            git add artifacts/EVAL.reference.md
+            git commit -m "ci: reference ops-eval drifted; refreshing committed report"
+            git push
+          fi

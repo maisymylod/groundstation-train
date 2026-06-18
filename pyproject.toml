@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "groundstation-train"
+version = "0.1.0"
+description = "SFT + DPO preference alignment for the Heliosnet mission-ops copilot's reasoning core, with a CI-validated held-out ops eval and approval-gate compliance metric."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+# Core install covers dataset synthesis and the eval harness (CPU, no ML stack).
+dependencies = [
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+# Training stack. Install on the GPU box: `pip install -e ".[train]"`.
+train = [
+    "torch>=2.3",
+    "transformers>=4.45",
+    "trl>=0.11",
+    "peft>=0.13",
+    "datasets>=2.20",
+    "accelerate>=0.34",
+    "bitsandbytes>=0.43",
+    "deepspeed>=0.14",
+    "wandb>=0.17",
+    "pyyaml>=6.0",
+]
+# Evaluating a real checkpoint (ModelPolicy) needs inference deps only.
+eval = ["torch>=2.3", "transformers>=4.45"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "pyyaml>=6.0"]
+
+[project.scripts]
+groundstation-data = "groundstation_train.data.generate:main"
+groundstation-eval = "groundstation_train.eval.harness:main"
+groundstation-sft = "groundstation_train.train.sft:main"
+groundstation-dpo = "groundstation_train.train.dpo:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["groundstation_train"]
+# Training entrypoints require a GPU + the ML stack; excluded from the coverage
+# floor and exercised by the documented run, not CI.
+omit = ["*/train/sft.py", "*/train/dpo.py", "*/eval/policies.py"]
